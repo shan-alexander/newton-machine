@@ -1,0 +1,43 @@
+[package]
+name = "newton-machine"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Newtonian state machines: typed Harel configurations, an Elm update loop, and inertial history as a sidecar."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/newton-machine"
+keywords = ["state-machine", "statechart", "elm", "harel", "mvu"]
+categories = ["data-structures", "no-std", "rust-patterns"]
+authors = ["Newton Machine Contributors"]
+# GitHub-only: examples/, docs/ (rustbrain), .github/. `cargo publish` will
+# warn that examples are ignored; that is intended.
+include = [
+    "/src/**",
+    "/tests/**",
+    "/Cargo.toml",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE-MIT",
+    "/LICENSE-APACHE",
+    "/rustfmt.toml",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["std"]
+std = ["alloc"]
+alloc = ["serde?/alloc"]
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(docsrs)"] }
+
+[lints.rustdoc]
+broken_intra_doc_links = "deny"

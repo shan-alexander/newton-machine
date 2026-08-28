@@ -1,0 +1,135 @@
+//! Elm loop around a Harel configuration tree.
+//!
+//! `Self` is the configuration (XOR enums / AND structs). `Model` is extended
+//! state. `History` is the sidecar. That split keeps `Clone` / serde honest:
+//! chart + context + history serialize; behavior does not.
+//!
+//! Two entry points, one semantics:
+//!
+//! - [`step`] — Elm-pure: owned in, owned out. Tests, time-travel, persist-after-event.
+//! - [`apply`] — hot path: `&mut`, no clone of context.
+//!
+//! [`step`] is replace + [`apply`]. Do not invent a second semantics.
+
+// rustbrain: [[docs/concepts/newtonian-state-machine]]
+// rustbrain: [[docs/adr/0003-tea-is-the-only-mutation-protocol]]
+// rustbrain: [[docs/goals/elm-shaped-public-api]]
+
+use crate::sub::Sub;
+
+/// Result of [`Machine::init`]: configuration, extended state, sidecar, entry commands.
+#[derive(Clone, Debug)]
+pub struct Boot<M: Machine> {
+    /// Live configuration tree.
+    pub machine: M,
+    /// Extended state (Harel datamodel).
+    pub model: M::Model,
+    /// Inertial history sidecar.
+    pub history: M::History,
+    /// Commands from entering the initial configuration. Host executes these.
+    pub cmd: M::Cmd,
+}
+
+impl<M: Machine> Boot<M> {
+    /// Assemble the four parts returned by [`Machine::init`].
+    #[inline]
+    pub const fn new(machine: M, model: M::Model, history: M::History, cmd: M::Cmd) -> Self {
+        Self {
+            machine,
+            model,
+            history,
+            cmd,
+        }
+    }
+}
+
+/// A Newtonian state machine.
+///
+/// Implementors encode the live configuration in `Self`. Heavy data belongs in
+/// `Model`. Opt-in history belongs in `History` (`()` if unused).
+#[doc(alias = "Elm")]
+#[doc(alias = "TEA")]
+#[doc(alias = "MVU")]
+///
+/// `update` must not perform I/O. Entry/exit/transition actions return
+/// [`crate::Cmd`] values. The host executes them.
+pub trait Machine {
+    /// Construction input (Elm flags). Use `()` if none.
+    type Flags;
+    /// Extended state: Harel datamodel, not the chart.
+    type Model;
+    /// Applied force. User actions and host facts become messages.
+    type Msg;
+    /// Reaction. Data the host will execute after the step.
+    type Cmd;
+    /// Projection for humans or a renderer. Need not be HTML.
+    type View;
+    /// Inertial sidecar. Use `()` when no composite opted into history.
+    type History;
+    /// Identifier for [`Machine::in_state`]. Prefer a compact enum, not a `String`.
+    type NodeId;
+
+    /// First configuration, first model, first history, first command.
+    fn init(flags: Self::Flags) -> Boot<Self>
+    where
+        Self: Sized;
+
+    /// The only accelerator. Mutate configuration and model; return commands.
+    ///
+    /// Must not perform I/O. Must not call the host. Internal follow-up messages
+    /// may be drained with [`crate::rtc()`] inside this call; the caller still
+    /// observes one step.
+    fn update(
+        &mut self,
+        model: &mut Self::Model,
+        history: &mut Self::History,
+        msg: Self::Msg,
+    ) -> Self::Cmd;
+
+    /// Pure projection of configuration + model.
+    fn view(&self, model: &Self::Model) -> Self::View;
+
+    /// Listeners that should exist *now*. The host diffs this against the last
+    /// value and starts or stops timers, feeds, and sockets.
+    fn subscriptions(&self, _model: &Self::Model) -> Sub<Self::Msg> {
+        Sub::none()
+    }
+
+    /// Query whether a node is in the active configuration.
+    fn in_state(&self, id: Self::NodeId) -> bool;
+
+    /// Write active node ids into `out`. Returns how many were written.
+    ///
+    /// Default: writes nothing. Used for diagnostics, not the hot path.
+    fn configuration(&self, out: &mut [Self::NodeId]) -> usize {
+        let _ = out;
+        0
+    }
+}
+
+/// Hot path: one message, in place, one command.
+///
+/// Same function body as [`step`].
+#[inline]
+pub fn apply<M: Machine>(
+    machine: &mut M,
+    model: &mut M::Model,
+    history: &mut M::History,
+    msg: M::Msg,
+) -> M::Cmd {
+    machine.update(model, history, msg)
+}
+
+/// Elm-pure path: owned machine, model, and history in; owned quadruple out.
+///
+/// Use this in tests, journals, and anywhere you persist after the event.
+#[inline]
+pub fn step<M: Machine>(
+    mut machine: M,
+    mut model: M::Model,
+    mut history: M::History,
+    msg: M::Msg,
+) -> (M, M::Model, M::History, M::Cmd) {
+    let cmd = machine.update(&mut model, &mut history, msg);
+    (machine, model, history, cmd)
+}

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - name: fmt
+        run: cargo fmt --check
+      - name: clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: test default
+        run: cargo test
+      - name: test no_std
+        run: cargo test --no-default-features
+      - name: test alloc
+        run: cargo test --no-default-features --features alloc
+      - name: test serde
+        run: cargo test --features serde
+      - name: GitHub examples
+        run: cargo build --examples
+      - name: package excludes examples/
+        run: |
+          set -euo pipefail
+          list=$(cargo package --list --allow-dirty)
+          echo "$list"
+          if echo "$list" | grep -E '^examples/'; then
+            echo "examples/ must not ship in the crates.io package" >&2
+            exit 1
+          fi
+          if echo "$list" | grep -E '^docs/'; then
+            echo "docs/ (rustbrain) must not ship in the crates.io package" >&2
+            exit 1
+          fi

@@ -1,0 +1,28 @@
+# rustbrain index ignore (gitignore-inspired)
+# Built-in defaults always apply; this file adds more skips.
+
+# --- imported from .gitignore ---
+/target
+.brain/
+*.brainbundle
+Cargo.lock
+# --- end import ---
+
+# rustbrain: import-gitignore
+# Build / IDE
+target/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Derived data / large blobs
+*.parquet
+*.arrow
+data/
+datasets/
+
+# Logs and local env
+*.log
+.env
+.env.*
