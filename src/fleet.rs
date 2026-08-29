@@ -4,7 +4,7 @@
 //! with several XOR children. Fifty connections, devices, or entities are
 //! **fifty** configurations. Putting them in one `And` tree is the lattice
 //! this crate refused. A [`Fleet`] is a `BTreeMap` of
-//! [`Runtime`](crate::Runtime) values sharing `M::Msg`.
+//! [`Runtime`] values sharing `M::Msg`.
 //!
 //! The host still classifies and still executes `Cmd`. This type only
 //! owns the triples so one member’s history is not dropped when another

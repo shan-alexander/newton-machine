@@ -6,7 +6,7 @@ node_type: adr
 
 ## Status
 
-Accepted
+Accepted. Timing updated by [[docs/adr/0024-macros-feature-hidden-proc-macro]]: the engine exists; 0.2.0 ships optional macros whose expansion is handwritten Rust.
 
 ## Context
 

@@ -19,5 +19,8 @@ pub use crate::rtc::{rtc, rtc_n, unwrap_storm, Inbox, Storm, DEFAULT_DRAIN_CAP};
 pub use crate::runtime::Runtime;
 pub use crate::snapshot::Snapshot;
 pub use crate::sub::{Diff, Sub};
-pub use crate::topology::{lca, paths, Topology, MAX_DEPTH};
+pub use crate::topology::{lca, paths, IntoNode, Topology, MAX_DEPTH};
 pub use crate::transition::{perform, Transitional};
+
+#[cfg(feature = "macros")]
+pub use newton_machine_macros::{machine, IntoNode, Topology};

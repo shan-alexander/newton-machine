@@ -16,11 +16,13 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - name: fmt
-        run: cargo fmt --check
+        run: cargo fmt --all -- --check
       - name: clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - name: test default
         run: cargo test
+      - name: test macros
+        run: cargo test --features macros --workspace
       - name: test no_std
         run: cargo test --no-default-features
       - name: test alloc
@@ -64,4 +66,4 @@ jobs:
         with:
           toolchain: "1.80.0"
       - name: lib tests on MSRV (no examples)
-        run: cargo test --lib --tests --no-default-features --features alloc
+        run: cargo test --lib --tests --no-default-features --features alloc,macros

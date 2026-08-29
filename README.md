@@ -9,13 +9,14 @@
 
 A Newton machine is not a new automaton. Harel already defined the *kinematics* (XOR/AND, hierarchy, history, run-to-completion). This crate names the *dynamics and conservation laws* for embedding those kinematics in a running Rust system: **Unidirectional Configuration Architecture (UCA)**.
 
-**Status:** `0.1.0` is on [crates.io](https://crates.io/crates/newton-machine). The API is **not** SemVer-stable. There is no proc-macro and no SCXML interpreter.
+**Status:** `0.2.0` is on [crates.io](https://crates.io/crates/newton-machine). The API is **not** SemVer-stable. Optional `macros` generate handwritten-shaped `Machine` / `Topology` impls. There is no SCXML interpreter.
 
 ## Install
 
 ```toml
 [dependencies]
-newton-machine = "0.1"
+newton-machine = "0.2"
+# newton-machine = { version = "0.2", features = ["macros"] }
 ```
 
 ```bash
@@ -254,6 +255,47 @@ HTML report: `target/criterion/report/index.html`.
 | `std` | yes | `std::error::Error` for `Storm`; implies `alloc` |
 | `alloc` | via `std` | `Cmd` heap beyond 4 atoms, `Sub::Many`, `Tape` vec, `ChordTable`, `Fleet` |
 | `serde` | no | derives on snapshot types |
+| `macros` | no | `#[derive(Topology)]`, `#[derive(IntoNode)]`, `#[machine]` (compile-time only) |
+
+## Macros (optional)
+
+Feature `macros` is sugar for boilerplate that does **not** encode UCA: the node tree, `parent()`, `in_state` ancestor walk, `perform` node ids. You still write the chart as an `enum`/`struct` and `update` as a `match`. Expansion is the impl you would have typed (`cargo expand`). There is no `statechart!` DSL and no I/O in generated entry.
+
+```rust
+use newton_machine::prelude::*;
+
+#[derive(Clone, Copy, PartialEq, Eq, Topology)]
+enum Node {
+    #[topology(root)]
+    Root,
+    #[topology(parent = Root)]
+    Off,
+    #[topology(parent = Root)]
+    On,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, IntoNode)]
+#[into_node(Node)]
+enum Chart { Off, On }
+
+impl Transitional for Chart {
+    type Ctx = ();
+    type Hist = ();
+    type Cmd = Cmd<()>;
+}
+
+#[machine(model = (), msg = (), cmd = Cmd<()>, view = bool, node_id = Node)]
+impl Chart {
+    fn init(_: ()) -> Boot<Self> { Boot::new(Chart::Off, (), (), Cmd::none()) }
+    fn update(&mut self, m: &mut (), h: &mut (), _: ()) -> Cmd<()> {
+        let dest = match *self { Chart::Off => Chart::On, Chart::On => Chart::Off };
+        newton_machine::perform!(self, dest, m, h)
+    }
+    fn view(&self, _: &()) -> bool { matches!(self, Chart::On) }
+}
+```
+
+Do **not** `cargo add newton-machine-macros`. That package exists only because Rust proc-macros must be their own crate type.
 
 ## Crate layout
 

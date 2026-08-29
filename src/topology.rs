@@ -89,7 +89,7 @@ where
 /// Least common ancestor of `a` and `b` under `parent`.
 ///
 /// The deepest node that is an ancestor of both (`a` is an ancestor of `a`).
-/// [`crate::perform`] exits source → LCA (not including LCA) and enters
+/// [`crate::perform()`] exits source → LCA (not including LCA) and enters
 /// LCA → target (not including LCA), so a parent you are staying in is not
 /// exited. If the nodes are disjoint (a broken topology), returns the root of
 /// `b`.
@@ -165,9 +165,21 @@ where
     }
 }
 
+/// Map a live configuration to the topology node that represents it (usually
+/// the deepest active id). Used by `perform!` and derived
+/// [`Machine::in_state`](crate::Machine::in_state) (ancestor walk).
+pub trait IntoNode {
+    /// Same id type as [`Topology::Node`].
+    type Node: Copy + PartialEq;
+
+    /// Active node of this configuration.
+    fn node(&self) -> Self::Node;
+}
+
 /// A chart tree: each node has at most one parent.
 ///
-/// Implement on the configuration type (`enum` XOR / `struct` AND).
+/// Implement on the configuration type (`enum` XOR / `struct` AND), or on
+/// the node-id enum (`#[derive(Topology)]`) and forward from the chart.
 pub trait Topology {
     /// Compact node id. Prefer a `Copy` enum, not a `String`.
     type Node: Copy + PartialEq;

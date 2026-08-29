@@ -51,7 +51,7 @@
 //! ```
 //!
 //! Authors of hierarchical machines implement [`Topology`] and [`Transitional`],
-//! then call [`perform`] from [`Machine::update`]. Internal follow-ups go through
+//! then call [`perform()`] from [`Machine::update`]. Internal follow-ups go through
 //! [`rtc()`] (return [`Storm`] via [`Machine::try_update`]; [`unwrap_storm`]
 //! in `update`). Orthogonal regions: [`And`].
 //!
@@ -62,13 +62,14 @@
 //!
 //! | Module | Role |
 //! | --- | --- |
-//! | [`machine`] / [`runtime`] | Elm loop: `init`, `update`, `try_apply`, `view` |
+//! | [`mod@machine`] / [`runtime`] | Elm loop: `init`, `update`, `try_apply`, `view` |
 //! | [`topology`] / [`transition`] | Harel LCA: parent tree, exit/enter, `perform` |
 //! | [`and`] | First-class Harel AND: [`And`] |
 //! | [`rtc()`] / [`mod@rtc`] | Run-to-completion drain with a storm cap |
 //! | [`cmd`] / [`sub`] / [`host`] | Effects as data; the host executes them |
 //! | [`bits`] / chord / fleet | Host keys: bitset projection, chord table, N runtimes (`alloc`) |
 //! | [`snapshot`] / [`history`] | `{config, context, history}` phase space |
+//! | feature `macros` | `#[derive(Topology)]`, `#[derive(IntoNode)]`, `#[machine]`, [`perform!`] |
 //!
 //! [`prelude`] re-exports the types an author needs.
 
@@ -80,6 +81,7 @@
 // rustbrain: [[docs/adr/0021-and-combinator]]
 // rustbrain: [[docs/adr/0022-sub-diff]]
 // rustbrain: [[docs/adr/0023-chord-table-is-host-policy]]
+// rustbrain: [[docs/adr/0024-macros-feature-hidden-proc-macro]]
 // symbol:Machine symbol:Runtime symbol:Outcome symbol:Snapshot symbol:perform
 
 #![no_std]
@@ -135,6 +137,12 @@ pub use runtime::Runtime;
 pub use snapshot::Snapshot;
 pub use sub::{Diff, Sub};
 pub use topology::{
-    ancestors, enter_path, exit_path, lca, paths, Chain, Paths, Topology, MAX_DEPTH,
+    ancestors, enter_path, exit_path, lca, paths, Chain, IntoNode, Paths, Topology, MAX_DEPTH,
 };
 pub use transition::{perform, Transitional};
+
+#[cfg(feature = "macros")]
+#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+pub use newton_machine_macros::{machine, IntoNode, Topology};
+
+mod mac;

@@ -17,7 +17,7 @@ Unlocks [[docs/goals/establish-the-newtonian-family]] and [[docs/goals/publish-a
 
 ## Backlog
 
-- [ ] Optional proc-macro whose expansion remains readable. See [[docs/adr/0010-handwritten-expansion-before-macros]].
+- [x] Optional proc-macro whose expansion remains readable. See [[docs/adr/0024-macros-feature-hidden-proc-macro]].
 - [ ] Optional `newton-trading` companion (vocabulary only, no sockets). See [[docs/adr/0011-core-crate-is-not-a-broker]].
 - [ ] File-backed `HistoryStore` example in the host, not in core.
 - [ ] First crates.io publish when the owner chooses. See [[docs/adr/0001-crate-identity-and-versioning]].

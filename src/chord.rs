@@ -1,4 +1,4 @@
-//! Host policy table over a [`Bits`](crate::Bits) pool.
+//! Host policy table over a [`Bits`] pool.
 //!
 //! A Newton machine names **what is true** (nested ADTs). After `apply`,
 //! the host often needs **what to do** for the *combination* of live flags:

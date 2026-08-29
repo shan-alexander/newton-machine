@@ -108,7 +108,7 @@ impl<M: Machine> Runtime<M> {
         self.machine.in_state(id)
     }
 
-    /// [`Machine::project`](crate::Machine::project): compact key for a
+    /// [`Machine::project`]: compact key for a
     /// host [`ChordTable`](crate::ChordTable) (or the host’s own map).
     /// Not a Harel node.
     #[inline]
