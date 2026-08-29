@@ -18,7 +18,7 @@ pub enum Outcome<S, C> {
     Transition {
         /// Destination configuration for this region (not necessarily the root).
         to: S,
-        /// Command collected on the way out. May be [`crate::Cmd::None`].
+        /// Command collected on the way out. May be empty ([`crate::Cmd::none`]).
         cmd: C,
     },
     /// Stay in this region; run an action only.

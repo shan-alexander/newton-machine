@@ -44,7 +44,7 @@ pub fn restore_deep<T: Clone>(last: Option<&T>, default: T) -> T {
 }
 
 /// How a composite records where it was when it was last exited.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum HistoryKind {
     /// No memory. Re-entry uses the declared initial child.

@@ -15,6 +15,7 @@
 // rustbrain: [[docs/adr/0003-tea-is-the-only-mutation-protocol]]
 // rustbrain: [[docs/goals/elm-shaped-public-api]]
 
+use crate::rtc::Storm;
 use crate::sub::Sub;
 
 /// Result of [`Machine::init`]: configuration, extended state, sidecar, entry commands.
@@ -47,12 +48,12 @@ impl<M: Machine> Boot<M> {
 ///
 /// Implementors encode the live configuration in `Self`. Heavy data belongs in
 /// `Model`. Opt-in history belongs in `History` (`()` if unused).
-#[doc(alias = "Elm")]
-#[doc(alias = "TEA")]
-#[doc(alias = "MVU")]
 ///
 /// `update` must not perform I/O. Entry/exit/transition actions return
 /// [`crate::Cmd`] values. The host executes them.
+#[doc(alias = "Elm")]
+#[doc(alias = "TEA")]
+#[doc(alias = "MVU")]
 pub trait Machine {
     /// Construction input (Elm flags). Use `()` if none.
     type Flags;
@@ -76,15 +77,35 @@ pub trait Machine {
 
     /// The only accelerator. Mutate configuration and model; return commands.
     ///
-    /// Must not perform I/O. Must not call the host. Internal follow-up messages
-    /// may be drained with [`crate::rtc()`] inside this call; the caller still
-    /// observes one step.
+    /// Must not perform I/O. Must not call the host.
+    ///
+    /// Simple machines (no internal follow-ups) implement this and leave
+    /// [`Machine::try_update`] at the default.
+    ///
+    /// Machines that drain [`crate::rtc()`] **must** override
+    /// [`Machine::try_update`] and implement `update` as
+    /// [`crate::rtc::unwrap_storm`]`(self.try_update(...))`. Storm is a chart
+    /// bug, not a quiet `.expect`. Hosts that must Halt rather than die call
+    /// [`crate::Runtime::try_apply`].
     fn update(
         &mut self,
         model: &mut Self::Model,
         history: &mut Self::History,
         msg: Self::Msg,
     ) -> Self::Cmd;
+
+    /// Fallible [`Machine::update`]. Default: `Ok(self.update(...))`.
+    ///
+    /// Override when `update` uses [`crate::rtc()`] so [`crate::Runtime::try_apply`]
+    /// can return [`Storm`] instead of panicking.
+    fn try_update(
+        &mut self,
+        model: &mut Self::Model,
+        history: &mut Self::History,
+        msg: Self::Msg,
+    ) -> Result<Self::Cmd, Storm> {
+        Ok(self.update(model, history, msg))
+    }
 
     /// Pure projection of configuration + model.
     fn view(&self, model: &Self::Model) -> Self::View;
@@ -105,6 +126,15 @@ pub trait Machine {
         let _ = out;
         0
     }
+
+    /// Compact bitset of the live configuration. Host sleeve / chord tables
+    /// index this; [`crate::Machine::update`] does not.
+    ///
+    /// Default: empty. Override when the host needs a `u128` key. Orthogonal
+    /// XOR children must occupy disjoint bits.
+    fn project(&self) -> crate::bits::Bits {
+        crate::bits::Bits::EMPTY
+    }
 }
 
 /// Hot path: one message, in place, one command.
@@ -120,6 +150,17 @@ pub fn apply<M: Machine>(
     machine.update(model, history, msg)
 }
 
+/// [`apply`] that surfaces [`Storm`] instead of panicking.
+#[inline]
+pub fn try_apply<M: Machine>(
+    machine: &mut M,
+    model: &mut M::Model,
+    history: &mut M::History,
+    msg: M::Msg,
+) -> Result<M::Cmd, Storm> {
+    machine.try_update(model, history, msg)
+}
+
 /// Elm-pure path: owned machine, model, and history in; owned quadruple out.
 ///
 /// Use this in tests, journals, and anywhere you persist after the event.
@@ -132,4 +173,17 @@ pub fn step<M: Machine>(
 ) -> (M, M::Model, M::History, M::Cmd) {
     let cmd = machine.update(&mut model, &mut history, msg);
     (machine, model, history, cmd)
+}
+
+/// [`step`] that surfaces [`Storm`] instead of panicking.
+#[inline]
+#[allow(clippy::type_complexity)]
+pub fn try_step<M: Machine>(
+    mut machine: M,
+    mut model: M::Model,
+    mut history: M::History,
+    msg: M::Msg,
+) -> Result<(M, M::Model, M::History, M::Cmd), Storm> {
+    let cmd = machine.try_update(&mut model, &mut history, msg)?;
+    Ok((machine, model, history, cmd))
 }

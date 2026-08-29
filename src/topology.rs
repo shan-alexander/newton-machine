@@ -5,11 +5,12 @@
 // rustbrain: [[docs/concepts/least-common-ancestor-transition]]
 // rustbrain: [[docs/adr/0002-xor-enums-and-and-structs]]
 
-/// Maximum ancestor walk. Charts deeper than this are a programming error.
+/// Maximum ancestor walk. Charts deeper than this panic: a truncated walk
+/// would compute the wrong LCA.
 pub const MAX_DEPTH: usize = 32;
 
 /// A short path of node ids, stored on the stack.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Chain<N: Copy> {
     nodes: [Option<N>; MAX_DEPTH],
     len: usize,
@@ -24,10 +25,10 @@ impl<N: Copy> Chain<N> {
     }
 
     fn push(&mut self, node: N) {
-        if self.len >= MAX_DEPTH {
-            debug_assert!(false, "topology deeper than MAX_DEPTH ({MAX_DEPTH})");
-            return;
-        }
+        assert!(
+            self.len < MAX_DEPTH,
+            "topology deeper than MAX_DEPTH ({MAX_DEPTH}): ancestor walk truncated, LCA would be wrong"
+        );
         self.nodes[self.len] = Some(node);
         self.len += 1;
     }
@@ -87,7 +88,11 @@ where
 
 /// Least common ancestor of `a` and `b` under `parent`.
 ///
-/// If the nodes are disjoint (a broken topology), returns the root of `b`.
+/// The deepest node that is an ancestor of both (`a` is an ancestor of `a`).
+/// [`crate::perform`] exits source → LCA (not including LCA) and enters
+/// LCA → target (not including LCA), so a parent you are staying in is not
+/// exited. If the nodes are disjoint (a broken topology), returns the root of
+/// `b`.
 pub fn lca<N, F>(a: N, b: N, parent: F) -> N
 where
     N: Copy + PartialEq,

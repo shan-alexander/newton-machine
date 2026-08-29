@@ -16,7 +16,7 @@ pub const DEFAULT_DRAIN_CAP: usize = 32;
 ///
 /// This is a bug in the machine (a guard that always retriggers), not a host
 /// I/O error. The previous snapshot remains the last honest point.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Storm {
     /// Cap that was exceeded.
     pub cap: u16,
@@ -28,10 +28,20 @@ impl core::fmt::Display for Storm {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
-            "internal event storm: drained {} with cap {}",
+            "internal event storm: drained {} with cap {} (chart bug; Runtime::try_apply to Halt instead of die)",
             self.drained, self.cap
         )
     }
+}
+
+/// Panic on [`Storm`]. Use in [`crate::Machine::update`] when the chart
+/// uses [`rtc`]. Hosts that must Halt rather than die call
+/// [`crate::Runtime::try_apply`].
+///
+/// Storm is a programmer error (always-true guard), like indexing past a
+/// slice. `try_apply` is the `slice.get` opt-in.
+pub fn unwrap_storm<T>(result: Result<T, Storm>) -> T {
+    result.unwrap_or_else(|s| panic!("{s}"))
 }
 
 #[cfg(feature = "std")]
@@ -40,6 +50,7 @@ impl std::error::Error for Storm {}
 /// Bounded FIFO of follow-up messages. Does not allocate.
 ///
 /// `push` that would exceed `N` sets [`Inbox::overflowed`] instead of growing.
+#[derive(Clone, Debug)]
 pub struct Inbox<M, const N: usize = DEFAULT_DRAIN_CAP> {
     slots: [Option<M>; N],
     start: usize,

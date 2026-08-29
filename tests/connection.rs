@@ -202,12 +202,20 @@ impl Machine for Conn {
         )
     }
 
-    fn update(&mut self, model: &mut Context, history: &mut History, msg: Msg) -> Cmd<HostCmd> {
+    fn try_update(
+        &mut self,
+        model: &mut Context,
+        history: &mut History,
+        msg: Msg,
+    ) -> Result<Cmd<HostCmd>, Storm> {
         rtc(msg, |msg, inbox| {
             let _ = inbox;
             self.react(model, history, msg)
         })
-        .expect("connection chart does not enqueue follow-ups")
+    }
+
+    fn update(&mut self, model: &mut Context, history: &mut History, msg: Msg) -> Cmd<HostCmd> {
+        unwrap_storm(self.try_update(model, history, msg))
     }
 
     fn view(&self, _model: &Context) -> &'static str {

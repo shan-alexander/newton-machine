@@ -8,6 +8,7 @@
 
 use crate::history::HistoryStore;
 use crate::machine::{Boot, Machine};
+use crate::rtc::Storm;
 use crate::snapshot::Snapshot;
 use crate::sub::Sub;
 
@@ -60,8 +61,36 @@ impl<M: Machine> Runtime<M> {
     }
 
     /// Hot path: one external message, one command. Does not execute the command.
+    ///
+    /// Storm panics if the chart's `update` panics on [`Storm`] (the default
+    /// for machines that call [`crate::rtc::unwrap_storm`]). Use
+    /// [`Runtime::try_apply`] to Halt instead of die.
     pub fn apply(&mut self, msg: M::Msg) -> M::Cmd {
         self.machine.update(&mut self.model, &mut self.history, msg)
+    }
+
+    /// Apply `msg` only when `gate` is true (category-change / lift).
+    ///
+    /// The host classifies. A 5s pulse that does not move an XOR child is
+    /// not a message. If `gate` is false, `msg` is dropped and this returns
+    /// `None` — prefer [`crate::host::changed`] so you only build `msg` on
+    /// a real change.
+    pub fn apply_if(&mut self, gate: bool, msg: M::Msg) -> Option<M::Cmd> {
+        if gate {
+            Some(self.apply(msg))
+        } else {
+            None
+        }
+    }
+
+    /// [`Runtime::apply`] that returns [`Storm`] instead of panicking.
+    ///
+    /// Only useful if the machine **overrides** [`Machine::try_update`].
+    /// The default `try_update` calls `update`, so a panicking `update`
+    /// still panics here.
+    pub fn try_apply(&mut self, msg: M::Msg) -> Result<M::Cmd, Storm> {
+        self.machine
+            .try_update(&mut self.model, &mut self.history, msg)
     }
 
     /// Pure view.
@@ -77,6 +106,13 @@ impl<M: Machine> Runtime<M> {
     /// Whether `id` is in the active configuration.
     pub fn in_state(&self, id: M::NodeId) -> bool {
         self.machine.in_state(id)
+    }
+
+    /// [`Machine::project`](crate::Machine::project): compact key for a
+    /// host chord / sleeve table. Not a Harel node.
+    #[inline]
+    pub fn project(&self) -> crate::bits::Bits {
+        self.machine.project()
     }
 
     /// Active node ids written into `out`.
@@ -96,25 +132,10 @@ impl<M: Machine> Runtime<M> {
         &self.model
     }
 
-    /// Mutate extended state without a message.
-    ///
-    /// Prefer a `Msg`. Hosts use this for tests and for injecting facts that
-    /// are not yet modeled as messages.
-    #[inline]
-    pub fn model_mut(&mut self) -> &mut M::Model {
-        &mut self.model
-    }
-
     /// Borrow the history sidecar.
     #[inline]
     pub fn history(&self) -> &M::History {
         &self.history
-    }
-
-    /// Mutate history (tests, explicit clear on Resume). Prefer exit actions.
-    #[inline]
-    pub fn history_mut(&mut self) -> &mut M::History {
-        &mut self.history
     }
 }
 

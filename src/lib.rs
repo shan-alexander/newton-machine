@@ -52,7 +52,8 @@
 //!
 //! Authors of hierarchical machines implement [`Topology`] and [`Transitional`],
 //! then call [`perform`] from [`Machine::update`]. Internal follow-ups go through
-//! [`rtc()`].
+//! [`rtc()`] (return [`Storm`] via [`Machine::try_update`]; [`unwrap_storm`]
+//! in `update`). Orthogonal regions: [`And`].
 //!
 //! GitHub carries runnable demos under `examples/` (not part of the crates.io
 //! package). See the crate README.
@@ -61,10 +62,12 @@
 //!
 //! | Module | Role |
 //! | --- | --- |
-//! | [`machine`] / [`runtime`] | Elm loop: `init`, `update`, `view`, `subscriptions` |
+//! | [`machine`] / [`runtime`] | Elm loop: `init`, `update`, `try_apply`, `view` |
 //! | [`topology`] / [`transition`] | Harel LCA: parent tree, exit/enter, `perform` |
+//! | [`and`] | First-class Harel AND: [`And`] |
 //! | [`rtc()`] / [`mod@rtc`] | Run-to-completion drain with a storm cap |
 //! | [`cmd`] / [`sub`] / [`host`] | Effects as data; the host executes them |
+//! | [`bits`] / chord / fleet | Host keys: bitset projection, sleeve table, N runtimes (`alloc`) |
 //! | [`snapshot`] / [`history`] | `{config, context, history}` phase space |
 //!
 //! [`prelude`] re-exports the types an author needs.
@@ -72,6 +75,11 @@
 // rustbrain: [[docs/concepts/unidirectional-configuration-architecture]]
 // rustbrain: [[docs/concepts/newtonian-state-machine]]
 // rustbrain: [[docs/adr/0017-engine-is-topology-rtc-runtime]]
+// rustbrain: [[docs/adr/0018-cmd-inline-then-heap]]
+// rustbrain: [[docs/adr/0020-storm-panic-try-apply]]
+// rustbrain: [[docs/adr/0021-and-combinator]]
+// rustbrain: [[docs/adr/0022-sub-diff]]
+// rustbrain: [[docs/adr/0023-chord-table-is-host-policy]]
 // symbol:Machine symbol:Runtime symbol:Outcome symbol:Snapshot symbol:perform
 
 #![no_std]
@@ -85,8 +93,16 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod and;
+pub mod bits;
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+pub mod chord;
 pub mod cmd;
 pub mod combine;
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+pub mod fleet;
 pub mod history;
 pub mod host;
 pub mod machine;
@@ -99,19 +115,25 @@ pub mod sub;
 pub mod topology;
 pub mod transition;
 
-pub use cmd::Cmd;
+pub use and::{And, AndHistory, AndNode};
+pub use bits::Bits;
+#[cfg(feature = "alloc")]
+pub use chord::{ChordTable, Hit, MatchMode, Tie};
+pub use cmd::{Cmd, CmdOverflow, INLINE_CAP};
 pub use combine::Combine;
+#[cfg(feature = "alloc")]
+pub use fleet::Fleet;
 pub use history::{
     record_deep, record_shallow, restore_deep, restore_shallow, HistoryKind, HistoryStore,
     LoadResult, MemoryStore, StoreError,
 };
-pub use host::Tape;
-pub use machine::{apply, step, Boot, Machine};
+pub use host::{changed, Tape};
+pub use machine::{apply, step, try_apply, try_step, Boot, Machine};
 pub use outcome::Outcome;
-pub use rtc::{rtc, rtc_n, Inbox, Storm, DEFAULT_DRAIN_CAP};
+pub use rtc::{rtc, rtc_n, unwrap_storm, Inbox, Storm, DEFAULT_DRAIN_CAP};
 pub use runtime::Runtime;
 pub use snapshot::Snapshot;
-pub use sub::Sub;
+pub use sub::{Diff, Sub};
 pub use topology::{
     ancestors, enter_path, exit_path, lca, paths, Chain, Paths, Topology, MAX_DEPTH,
 };

@@ -19,7 +19,7 @@ pub trait Combine: Sized {
 impl<C> Combine for Cmd<C> {
     #[inline]
     fn none() -> Self {
-        Self::None
+        Cmd::none()
     }
 
     #[inline]
