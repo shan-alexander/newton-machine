@@ -7,20 +7,23 @@
 
 A Newton machine is not a new automaton. Harel already defined the *kinematics* (XOR/AND, hierarchy, history, run-to-completion). This crate names the *dynamics and conservation laws* for embedding those kinematics in a running Rust system: **Unidirectional Configuration Architecture (UCA)**.
 
-**Status:** `0.1.0` is the engine, **not yet published** to crates.io. The API is **not** SemVer-stable. There is no proc-macro and no SCXML interpreter.
+**Status:** `0.1.0` engine is on [GitHub](https://github.com/shan-alexander/newton-machine). **Not yet on crates.io** (needs a crates.io token, not a GitHub PAT). The API is **not** SemVer-stable. There is no proc-macro and no SCXML interpreter.
 
 ## Install
+
+Until crates.io:
+
+```toml
+[dependencies]
+newton-machine = { git = "https://github.com/shan-alexander/newton-machine" }
+```
+
+After `cargo publish`:
 
 ```toml
 [dependencies]
 newton-machine = "0.1"
 ```
-
-```bash
-cargo add newton-machine
-```
-
-Source: [github.com/shan-alexander/newton-machine](https://github.com/shan-alexander/newton-machine).
 
 MSRV **1.80**. `#![no_std]` + `alloc` supported. `unsafe` is forbidden.
 
