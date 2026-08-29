@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-29
+
+### Changed
+
+- Docs for authors and AI agents: crate-root [`macros`](https://docs.rs/newton-machine/latest/newton_machine/macros/index.html) module (recipe, generated vs handwritten, pitfalls). README “For AI agents” + `cargo add --features macros`. Clarifies the git **workspace** vs one public crate.
+
 ## [0.2.0] - 2026-08-29
 
 ### Added
@@ -79,7 +85,8 @@ First crates.io engine. API is **not** SemVer-stable.
 - Initial design crate. Family laws as types (`Machine`, `Cmd`, `Sub`, `Outcome`, `Snapshot`, `HistoryStore`).
 - Architecture notes under `docs/` (goals, ADRs, concepts, edge cases).
 
-[Unreleased]: https://github.com/shan-alexander/newton-machine/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/shan-alexander/newton-machine/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/shan-alexander/newton-machine/releases/tag/v0.2.1
 [0.2.0]: https://github.com/shan-alexander/newton-machine/releases/tag/v0.2.0
 [0.1.1]: https://github.com/shan-alexander/newton-machine/releases/tag/v0.1.1
 [0.1.0]: https://github.com/shan-alexander/newton-machine/releases/tag/v0.1.0

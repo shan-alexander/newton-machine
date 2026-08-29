@@ -1,4 +1,9 @@
 //! Common imports for authors of a Newton machine.
+//!
+//! With feature `macros`, this also brings `#[derive(Topology)]`,
+//! `#[derive(IntoNode)]`, and `#[machine]`. See [`crate::macros`].
+//! `perform!` is `newton_machine::perform!` (this prelude exports the
+//! **function** [`crate::perform()`]).
 
 pub use crate::and::{And, AndHistory, AndNode};
 pub use crate::bits::Bits;

@@ -1,5 +1,8 @@
-//! Proc-macros for `newton-machine`. Depend on `newton-machine` with
-//! `features = ["macros"]`; do not `cargo add` this crate.
+//! Proc-macros for `newton-machine`.
+//!
+//! **Depend on `newton-machine` with `features = ["macros"]`.** Do not
+//! `cargo add` this crate. The public guide is
+//! [`newton_machine::macros`](https://docs.rs/newton-machine/latest/newton_machine/macros/index.html).
 
 use proc_macro::TokenStream;
 

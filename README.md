@@ -9,7 +9,7 @@
 
 A Newton machine is not a new automaton. Harel already defined the *kinematics* (XOR/AND, hierarchy, history, run-to-completion). This crate names the *dynamics and conservation laws* for embedding those kinematics in a running Rust system: **Unidirectional Configuration Architecture (UCA)**.
 
-**Status:** `0.2.0` is on [crates.io](https://crates.io/crates/newton-machine). The API is **not** SemVer-stable. Optional `macros` generate handwritten-shaped `Machine` / `Topology` impls. There is no SCXML interpreter.
+**Status:** `0.2.1` is on [crates.io](https://crates.io/crates/newton-machine). The API is **not** SemVer-stable. Optional `macros` generate handwritten-shaped `Machine` / `Topology` impls. There is no SCXML interpreter.
 
 ## Install
 
@@ -21,11 +21,23 @@ newton-machine = "0.2"
 
 ```bash
 cargo add newton-machine
+cargo add newton-machine --features macros
 ```
 
 Source: [github.com/shan-alexander/newton-machine](https://github.com/shan-alexander/newton-machine).
 
 MSRV **1.80**. `#![no_std]` + `alloc` supported. `unsafe` is forbidden.
+
+## For AI agents
+
+This crate is a **typed Mealy-ish engine for Rust**, not a chart DSL. Full recipe: [docs.rs `macros` module](https://docs.rs/newton-machine/latest/newton_machine/macros/index.html).
+
+1. `cargo add newton-machine --features macros` — **never** `cargo add newton-machine-macros`.
+2. The git repo is a **workspace** (`macros/` is an implementation crate). Apps still depend on **one** package: `newton-machine`.
+3. Write the chart as ordinary Rust `enum`/`struct`. Macros fill `Topology`, `IntoNode`, `in_state`, `configuration`, `Machine` associated types. **`update` stays your `match`.** `Transitional` (exit/enter) stays handwritten. No I/O in those methods.
+4. Use `newton_machine::perform!(self, dest, ctx, hist)` for LCA. Prelude glob imports the **function** `perform`, so the macro needs the `newton_machine::` path.
+5. Expect `in_state(Root) == true` always; `cargo expand` looks like `examples/connection.rs`.
+6. Skip macros for a three-variant enum — implement [`Machine`](https://docs.rs/newton-machine/latest/newton_machine/trait.Machine.html) by hand.
 
 ## Four laws
 
@@ -301,7 +313,8 @@ Do **not** `cargo add newton-machine-macros`. That package exists only because R
 
 | Piece | Owns |
 | --- | --- |
-| **`newton-machine`** (this crate) | UCA laws and engine |
+| **`newton-machine`** (this crate) | UCA laws and engine (the only crate apps depend on) |
+| `macros/` (workspace package) | Proc-macros; enabled via feature `macros`, not a second `cargo add` |
 | `examples/` (GitHub) | runnable demos, not on crates.io |
 | `benches/` (GitHub) | Criterion: apply / LCA / And / Cmd |
 | `docs/` (GitHub) | rustbrain ADRs / goals / concepts |

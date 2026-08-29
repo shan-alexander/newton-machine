@@ -58,6 +58,20 @@
 //! GitHub carries runnable demos under `examples/` (not part of the crates.io
 //! package). See the crate README.
 //!
+//! # Macros (optional feature)
+//!
+//! Enable `macros` and read **[`macros`]** — that module is written for human
+//! authors **and** AI agents: when to use them, the copy-paste recipe, what is
+//! generated vs handwritten, and what will never be generated (`async` / I/O
+//! / a chart DSL).
+//!
+//! ```toml
+//! newton-machine = { version = "0.2", features = ["macros"] }
+//! ```
+//!
+//! Do not depend on `newton-machine-macros` directly. The git repo is a
+//! workspace; crates.io users still add **one** package.
+//!
 //! # Crate map
 //!
 //! | Module | Role |
@@ -69,7 +83,7 @@
 //! | [`cmd`] / [`sub`] / [`host`] | Effects as data; the host executes them |
 //! | [`bits`] / chord / fleet | Host keys: bitset projection, chord table, N runtimes (`alloc`) |
 //! | [`snapshot`] / [`history`] | `{config, context, history}` phase space |
-//! | feature `macros` | `#[derive(Topology)]`, `#[derive(IntoNode)]`, `#[machine]`, [`perform!`] |
+//! | [`macros`] | Feature `macros` guide (agents: start here) + re-exports of the derives |
 //!
 //! [`prelude`] re-exports the types an author needs.
 
@@ -108,6 +122,7 @@ pub mod fleet;
 pub mod history;
 pub mod host;
 pub mod machine;
+pub mod macros;
 pub mod outcome;
 pub mod prelude;
 pub mod rtc;

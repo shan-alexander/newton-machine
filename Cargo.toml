@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "newton-machine"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 rust-version = "1.80"
 description = "Newtonian state machines: typed Harel configurations, an Elm update loop, and inertial history as a sidecar."
@@ -42,7 +42,7 @@ macros = ["dep:newton-machine-macros"]
 
 [dependencies]
 serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
-newton-machine-macros = { path = "macros", version = "0.2.0", optional = true }
+newton-machine-macros = { path = "macros", version = "0.2.1", optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
