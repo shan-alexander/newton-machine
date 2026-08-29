@@ -8,7 +8,7 @@ Elm `Cmd` = GoF Command without the OO ceremony. `update` returns a description 
 
 That is also Newton's third law: every applied force has an equal-and-opposite reaction *returned*, never a hidden call.
 
-`Cmd<C>`: `None` | `Single(C)` | `Batch(Vec<C>)`. `C` is the author's vocabulary (`HttpConnect`, `Submit`, `Persist`). Nothing in this type can open a socket.
+`Cmd<C>` is an ordered bag of atoms (`C` = `HttpConnect`, `Submit`, `Persist`). Up to four live on the stack so `perform` never needs a heap; more spill to `Vec` with `alloc` or panic without. Representation is private — iterate, do not match variants. Nothing in this type can open a socket. See [[docs/adr/0018-cmd-inline-then-heap]].
 
 symbol:Cmd
 

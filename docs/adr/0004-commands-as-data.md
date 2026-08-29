@@ -14,7 +14,7 @@ If entry actions call I/O, snapshots contain lies, tests need the network, and a
 
 ## Decision
 
-- `Cmd<C>` is an enum: `None`, `Single(C)`, `Batch(Vec<C>)` (batch requires `alloc`). symbol:Cmd
+- `Cmd<C>` is an ordered bag of atoms. Up to 4 live on the stack; more need `alloc` or `and` panics. Representation is private. symbol:Cmd See [[docs/adr/0018-cmd-inline-then-heap]].
 - `Sub<L>` is the same idea for ongoing listeners. symbol:Sub
 - `update` never performs I/O. `Drop` of a state variant never performs I/O. See [[docs/edge_cases/i-o-smuggled-in-drop]].
 - The host is the only type allowed to talk to a broker, disk, or clock.

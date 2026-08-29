@@ -8,7 +8,7 @@ Founding goals of `newton-machine` `0.0.0`:
 
 - [[docs/goals/establish-the-newtonian-family]] — name UCA / Newton machines honestly
 - [[docs/goals/elm-shaped-public-api]] — `init` / `update` / `view` / `subscriptions`
-- [[docs/goals/typed-harel-configurations]] — XOR enum, AND struct
+- [[docs/goals/typed-harel-configurations]] — XOR enum, AND struct or `And<L, R>`
 - [[docs/goals/inertial-persistable-history]] — sidecar, not live variants
 - [[docs/goals/effects-never-leave-the-host]] — `Cmd` as data
 - [[docs/goals/publish-an-honest-0-0-0-crate]] — crates.io without a fake 1.0

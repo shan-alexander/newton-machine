@@ -27,6 +27,14 @@ jobs:
         run: cargo test --no-default-features --features alloc
       - name: test serde
         run: cargo test --features serde
+      - name: test serde no_std
+        run: cargo test --no-default-features --features serde
+      - name: test alloc+serde
+        run: cargo test --no-default-features --features alloc,serde
+      - name: rustdoc
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
       - name: GitHub examples
         run: cargo build --examples
       - name: package excludes examples/
@@ -42,3 +50,14 @@ jobs:
             echo "docs/ (rustbrain) must not ship in the crates.io package" >&2
             exit 1
           fi
+
+  msrv:
+    name: msrv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.80.0"
+      - name: lib tests on MSRV (no examples)
+        run: cargo test --lib --tests --no-default-features --features alloc

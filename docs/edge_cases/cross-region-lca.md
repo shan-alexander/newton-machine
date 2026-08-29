@@ -12,7 +12,7 @@ A transition whose source is in one orthogonal region and whose target is in ano
 
 ## Law
 
-- Legal transitions stay inside a region, or they are transitions of a **parent** XOR that rebuilds the AND node.
+- Legal transitions stay inside a region, or they are transitions of a **parent** XOR that rebuilds the AND node. `And<L, R>` makes cross-region assignment unrepresentable: each machine owns its `Self`. symbol:And
 - Cross-talk between regions is via `Model` (shared numbers) and via parent transitions, not via assigning a sibling field from a child `match`.
 - Document order still applies: each region is offered the event; at most one parent transition should fire per step unless you explicitly compose.
 

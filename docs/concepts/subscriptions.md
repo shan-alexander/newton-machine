@@ -4,7 +4,7 @@ node_type: concept
 ---
 # Subscriptions
 
-`subscriptions(model)` is a pure function of the current configuration. The host diffs the new `Sub` against the last one and starts or stops listeners.
+`subscriptions(model)` is a pure function of the current configuration. The host calls [`Sub::diff`](symbol:Sub) (`old.diff(&new)`) and starts `Diff.start` / stops `Diff.stop`. When the machine is `Locked` or `Offline`, `new` is smaller and the host drops timers it no longer requested. Elm already got this right; we keep it.
 
 When a Newton machine is `Locked` or `Offline`, the host should see a smaller `Sub` and drop timers it no longer requested. Elm already got this right; we keep it.
 

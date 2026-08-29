@@ -15,7 +15,7 @@ The family needs a crates.io name. `newton` is already published (2017, a Newton
 ## Decision
 
 - Publish the core crate as **`newton-machine`**.
-- Start at **`0.0.0`**. No SemVer stability until at least `0.1.0`, when RTC/LCA exists and the `Machine` trait has survived one real consumer.
+- `0.1.0` is the engine (RTC/LCA/`Runtime`). The API is **not** SemVer-stable until a real downstream consumer has survived a minor bump. Do not claim `1.0`.
 - Do not publish `newton` or try to take over the physics-simulator crate.
 - An optional later crate `newton-trading` may hold equity-bar vocabulary. It is not this crate.
 - docs.rs will render crate-level rustdoc. The rustbrain graph under `docs/` is the in-repo brain; it is not a second product.
@@ -24,7 +24,8 @@ The family needs a crates.io name. `newton` is already published (2017, a Newton
 
 - Search on crates.io for "newton machine" / "statechart" / "elm" should hit this crate.
 - Downstream must pin exact versions while we are in `0.x`.
-- README and rustdoc must say `0.0.0` is a design crate.
+- README and rustdoc must say `0.1.0` is the engine and is **not** SemVer-stable.
+- Set `repository` in `Cargo.toml` only after a GitHub remote exists.
 
 ## Related
 

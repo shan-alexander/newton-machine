@@ -15,6 +15,17 @@ struct Session {
 
 No threads, no `Arc<Mutex>`, no parallel runtime. See [[docs/concepts/virtual-concurrency]].
 
+Two grains:
+
+| Grain | When |
+| --- | --- |
+| Handwritten `struct { auth, sync }` | Shared `Model` (one `ticks`) |
+| `And<L, R>` | Regions are already machines; models/histories split; `AndNode` tags `in_state` |
+
+`And` offers the same `Msg` left-then-right on one RTC clock. A region cannot assign the sibling's configuration. See [[docs/adr/0021-and-combinator]]. symbol:And
+
+Fifty symbols are **not** an AND node. Use [`Fleet`](symbol:Fleet). Named conjunctions of flags (sleeves) are a host [[docs/concepts/chord-and-superstate]], not extra XOR children.
+
 A single `Msg` is offered to each field in document order (field order) during one [[docs/concepts/run-to-completion]] step. That is how a bar can update regime while an order is working and risk is already throttled, without flattening five dimensions into one mega-enum.
 
 ## Related

@@ -17,12 +17,12 @@ The core should run in embedded and in a trading process. `Vec` for `Cmd::Batch`
 - `#![no_std]`. `alloc` is a feature (on by default via `std`).
 - Default feature set: `std` → `alloc`.
 - `serde` is optional, default-off, `default-features = false` + `derive`. See [[docs/references/crates/serde]].
-- `Cmd::Batch` and `Sub::Many` exist only with `alloc`. Without `alloc`, `Cmd::and` keeps the left-hand command if both are non-empty (documented limitation).
+- `Cmd` always stacks up to 4 atoms. Heap batch and `Sub::Many` need `alloc`. Without `alloc`, `Cmd::and` of 5+ **panics** (no silent drop). See [[docs/adr/0018-cmd-inline-then-heap]].
 - No `unsafe`.
 
 ## Consequences
 
-- Embedded hosts can use `Cmd::Single` only.
+- Embedded hosts can emit up to four atoms per step without a heap.
 - Journals enable `serde`.
 - docs.rs builds with `all-features`.
 
