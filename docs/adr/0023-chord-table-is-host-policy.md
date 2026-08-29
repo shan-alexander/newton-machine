@@ -45,3 +45,5 @@ Refused: YAML charts, “sleeve” as a Newton node type, subset match inside `u
 - symbol:Bits
 - symbol:ChordTable
 - symbol:Fleet
+
+The **policy kernel** (exact ROM, hysteretic scores, Fold) is `newtonian-core`, not this crate. `ChordTable` longest-subset is a host helper. Kernel law is exact key. See sibling `docs/adr/0016-newtonian-core-is-the-policy-kernel` in `newton-core`.

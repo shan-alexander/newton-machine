@@ -50,6 +50,10 @@ jobs:
             echo "docs/ (rustbrain) must not ship in the crates.io package" >&2
             exit 1
           fi
+          if echo "$list" | grep -E '^benches/'; then
+            echo "benches/ must not ship in the crates.io package" >&2
+            exit 1
+          fi
 
   msrv:
     name: msrv

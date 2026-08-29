@@ -51,3 +51,5 @@ Classify in the host. [`changed`](symbol:changed) / [`Runtime::apply_if`](symbol
 - symbol:Bits
 - symbol:ChordTable
 - symbol:Fleet
+
+Family: a **policy kernel** (exact sleeve ROM, gated scores) belongs in `newtonian-core`. This crate projects truth to `Bits`. Longest-subset here is opt-in host policy, not kernel law.
