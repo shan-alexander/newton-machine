@@ -1,9 +1,9 @@
 //! Compact configuration key. Not a Harel node, not a string id.
 //!
 //! A Newton machine names **what is true** as nested ADTs. A host policy
-//! table (sleeves, overlays, “what to do”) indexes a bitset projected from
-//! that configuration. [`Bits`] is that projection: up to 128 independent
-//! flags, `Copy`, no heap.
+//! table ([`ChordTable`](crate::ChordTable), or the host’s own map) indexes
+//! a bitset projected from that configuration. [`Bits`] is that projection:
+//! up to 128 independent flags, `Copy`, no heap.
 //!
 //! Orthogonal XOR children occupy **disjoint** bit ranges. Two children of
 //! one XOR must not both be set — that would reconstruct the illegal
@@ -16,9 +16,9 @@
 
 /// Compact configuration key (`u128` bitmask).
 ///
-/// Bit *i* is “flag *i* is in the live pool.” Interpretation of *i* is the
-/// author’s (region discriminant, score id, book bit). The crate never
-/// intern’s strings here.
+/// Bit *i* is “flag *i* is in the live pool.” Interpretation of *i* is
+/// the author’s (XOR child, host classifier, overlay id). The crate
+/// never interns strings here.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Bits(u128);

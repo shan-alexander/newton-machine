@@ -127,8 +127,9 @@ pub trait Machine {
         0
     }
 
-    /// Compact bitset of the live configuration. Host sleeve / chord tables
-    /// index this; [`crate::Machine::update`] does not.
+    /// Compact bitset of the live configuration. Host
+    /// [`crate::ChordTable`]s (or a host `HashMap`) index this;
+    /// [`crate::Machine::update`] does not.
     ///
     /// Default: empty. Override when the host needs a `u128` key. Orthogonal
     /// XOR children must occupy disjoint bits.

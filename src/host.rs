@@ -13,9 +13,9 @@ use alloc::vec::Vec;
 
 /// Category-change gate: `Some(next)` when `prev != next`.
 ///
-/// Host classifies (TA, scores, IR). Newton `apply`s only when an XOR
-/// child actually moves. A tick that leaves `Neutral` as `Neutral` is
-/// silence, not a `Msg`.
+/// Host classifies (sensors, protocol facts, UI). Newton `apply`s only
+/// when an XOR child actually moves. A tick that leaves `Idle` as `Idle`
+/// is silence, not a `Msg`.
 #[inline]
 pub fn changed<T: PartialEq>(prev: &T, next: T) -> Option<T> {
     if *prev == next {

@@ -67,7 +67,7 @@
 //! | [`and`] | First-class Harel AND: [`And`] |
 //! | [`rtc()`] / [`mod@rtc`] | Run-to-completion drain with a storm cap |
 //! | [`cmd`] / [`sub`] / [`host`] | Effects as data; the host executes them |
-//! | [`bits`] / chord / fleet | Host keys: bitset projection, sleeve table, N runtimes (`alloc`) |
+//! | [`bits`] / chord / fleet | Host keys: bitset projection, chord table, N runtimes (`alloc`) |
 //! | [`snapshot`] / [`history`] | `{config, context, history}` phase space |
 //!
 //! [`prelude`] re-exports the types an author needs.

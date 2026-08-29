@@ -1,13 +1,14 @@
-//! Many runtimes, one message vocabulary. Not an `And` of N desks.
+//! Many runtimes, one message vocabulary. Not an `And` of N machines.
 //!
-//! Orthogonal regions (`And<L,R>`) are **one** configuration with several
-//! XOR children. Fifty symbols are **fifty** configurations. Putting them
-//! in one `And` tree is the lattice the crate refused. A [`Fleet`] is a
-//! `BTreeMap` of [`Runtime`](crate::Runtime) values sharing `M::Msg`.
+//! Orthogonal regions ([`And`](crate::And)`<L,R>`) are **one** configuration
+//! with several XOR children. Fifty connections, devices, or entities are
+//! **fifty** configurations. Putting them in one `And` tree is the lattice
+//! this crate refused. A [`Fleet`] is a `BTreeMap` of
+//! [`Runtime`](crate::Runtime) values sharing `M::Msg`.
 //!
 //! The host still classifies and still executes `Cmd`. This type only
-//! owns the triples so you do not drop one symbol’s history when another
-//! bar arrives.
+//! owns the triples so one member’s history is not dropped when another
+//! member receives a message.
 //!
 // rustbrain: [[docs/adr/0023-chord-table-is-host-policy]]
 // rustbrain: [[docs/adr/0007-virtual-concurrency-not-threads]]
@@ -17,7 +18,7 @@ use alloc::collections::BTreeMap;
 use crate::machine::Machine;
 use crate::runtime::Runtime;
 
-/// N independent Newton machines, keyed by the host (`symbol`, `conId`, …).
+/// N independent Newton machines, keyed by the host (`id`, `session`, `device`, …).
 pub struct Fleet<K, M: Machine> {
     inner: BTreeMap<K, Runtime<M>>,
 }
@@ -124,18 +125,18 @@ mod tests {
     #[test]
     fn two_symbols_do_not_share_model() {
         let mut f = Fleet::<&str, Tick>::new();
-        let _ = f.boot("AAPL", ());
-        let _ = f.boot("MSFT", ());
-        f.apply(&"AAPL", ());
-        f.apply(&"AAPL", ());
-        f.apply(&"MSFT", ());
-        assert_eq!(f.get(&"AAPL").unwrap().view(), 2);
-        assert_eq!(f.get(&"MSFT").unwrap().view(), 1);
+        let _ = f.boot("east", ());
+        let _ = f.boot("west", ());
+        f.apply(&"east", ());
+        f.apply(&"east", ());
+        f.apply(&"west", ());
+        assert_eq!(f.get(&"east").unwrap().view(), 2);
+        assert_eq!(f.get(&"west").unwrap().view(), 1);
     }
 
     #[test]
     fn apply_missing_is_none() {
         let mut f = Fleet::<&str, Tick>::new();
-        assert!(f.apply(&"AAPL", ()).is_none());
+        assert!(f.apply(&"east", ()).is_none());
     }
 }

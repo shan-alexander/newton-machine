@@ -1,12 +1,60 @@
 //! Host policy table over a [`Bits`](crate::Bits) pool.
 //!
-//! This is **not** a Harel node and **not** a YAML chart. The Newton
-//! machine projects truth; the host looks up “what to do.” Quant-style
-//! desks keep this table in their own crate (often `HashMap` + exact
-//! key). This type exists so a Newton host does not have to invent the
-//! subset rule, and so two same-length chords have an explicit tie law.
+//! A Newton machine names **what is true** (nested ADTs). After `apply`,
+//! the host often needs **what to do** for the *combination* of live flags:
+//! “armed and degraded”, “airborne and combat”, “session live and drain
+//! requested”. Promoting every conjunction into an XOR child is the
+//! mega-enum this crate refused. [`ChordTable`] is that missing layer:
+//! an authored table of **chords** (named subsets of a bit pool), looked
+//! up *outside* [`Machine::update`](crate::Machine::update).
 //!
-//! [`Machine::update`](crate::Machine::update) must not call this.
+//! This is **not** a Harel node, **not** a YAML chart, and **not** a
+//! domain product (not a broker, not a renderer, not a behavior tree). The
+//! payload `T` is whatever the host stores: a label, a `Cmd` template, a
+//! function id, a clip name. Linear scan is deliberate: these tables are
+//! tens of rows. A host that already has `HashMap<u128, T>` for
+//! [`MatchMode::Exact`] should keep it and feed
+//! [`Bits::raw`](crate::Bits::raw) as the key.
+//!
+//! # Pool, chord, hit
+//!
+//! - **Pool** — bits that are true together right now (`{A,B,C,D}`),
+//!   usually [`Runtime::project`](crate::Runtime::project).
+//! - **Chord** — an authored subset the host named (`{A,B}`, `{A,B,D}`).
+//! - **Hit** — the row the table selects, or miss, or tie.
+//!
+//! ```text
+//! typed config  --project-->  Bits  --lookup-->  Hit { value | miss | tie }
+//!      Newton                   key                   host policy
+//! ```
+//!
+//! # Match modes
+//!
+//! [`MatchMode::Exact`] — pool must **equal** a row. Unauthored pool →
+//! [`Hit::Miss`]. Fail-closed: nothing fires unless you listed that
+//! combination.
+//!
+//! [`MatchMode::LongestSubset`] — longest authored **subset** of the pool
+//! wins. `{A,B,C,D}` with rows `{A,B}` (`N=2`) and `{A,B,D}` (`N=3`)
+//! selects `{A,B,D}`. Extra atoms do not invent a row; they also do not
+//! block a more specific authored chord.
+//!
+//! Same length (and same [`insert_pri`](ChordTable::insert_pri) priority)
+//! is a **specification hole**, not a race the crate should invent.
+//! Default [`Tie::Refuse`] returns [`Hit::Tie`]. [`Tie::AuthorOrder`]
+//! picks the first inserted row (list order).
+//!
+//! Note: `{A,C,D}` and `{A,B,D}` are both `N=3`. Against pool `{A,B,C,D}`
+//! that is a tie, not “prefer ABD because we mentioned it in a comment.”
+//!
+//! # What this is not
+//!
+//! - Not called from `update`. The chart does not own the table.
+//! - Not longest-match-as-a-Harel-parent. The winning chord is a **label
+//!   the host computed**, not a new XOR child.
+//! - Not a domain engine. A protocol host, a game, a robot sequencer, and
+//!   a trading desk can all use the same type; only `T` and the bit
+//!   mapping change.
 //!
 // rustbrain: [[docs/concepts/chord-and-superstate]]
 // rustbrain: [[docs/adr/0023-chord-table-is-host-policy]]
@@ -19,23 +67,33 @@ use crate::bits::Bits;
 /// How [`ChordTable::lookup`] treats an unauthored pool.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MatchMode {
-    /// Pool must **equal** a row mask. Unauthored chord → [`Hit::Miss`].
-    /// This is the QuantSys sleeve map.
+    /// Pool must **equal** a row mask. Unauthored combination → [`Hit::Miss`].
+    ///
+    /// Use this when every interesting product is listed and silence is
+    /// the correct default (fail-closed).
     Exact,
-    /// Longest authored **subset** of the pool wins. `{A,B,C,D}` with rows
-    /// `{A,B}` and `{A,B,D}` selects `{A,B,D}` (`N=3 > 2`). Unauthored
-    /// atoms are ignored, not a miss, as long as some row is a subset.
+    /// Longest authored **subset** of the pool wins.
+    ///
+    /// `{A,B,C,D}` with rows `{A,B}` and `{A,B,D}` selects `{A,B,D}`
+    /// (`N=3 > 2`). Unauthored extra atoms are ignored, not a miss, as
+    /// long as some row is still a subset. Same-length leftover is
+    /// [`Tie`], not a guess.
     LongestSubset,
 }
 
-/// Same-length (and same-priority) race.
+/// Same-length (and same-priority) race among subsets of the pool.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tie {
     /// First inserted row among the tied winners. Deterministic, silent.
+    ///
+    /// Use when the table is an ordered list and “first matching row”
+    /// is the documented policy.
     AuthorOrder,
-    /// Two winners is a bug. Lookup returns [`Hit::Tie`]. Fail-closed
-    /// desks use this so `{A,B}` vs `{A,C}` against pool `{A,B,C}` cannot
-    /// pick a sleeve by accident.
+    /// Two winners is a bug. Lookup returns [`Hit::Tie`].
+    ///
+    /// Fail-closed default: `{A,B}` vs `{A,C}` against pool `{A,B,C}`
+    /// must not pick a payload by accident. Add a more specific row,
+    /// set [`ChordTable::insert_pri`], or switch to [`Tie::AuthorOrder`].
     Refuse,
 }
 
@@ -48,9 +106,9 @@ pub enum Hit<'a, T> {
     Hit {
         /// Row mask that won.
         mask: Bits,
-        /// Row priority.
+        /// Row priority (higher wins among equal popcount).
         priority: i16,
-        /// Authored payload (sleeve, overlay, label, …).
+        /// Authored payload (label, overlay, `Cmd` template, …).
         value: &'a T,
     },
     /// [`Tie::Refuse`] and more than one row shared the winning
@@ -70,9 +128,38 @@ struct Row<T> {
     value: T,
 }
 
-/// Ordered table of authored chords (sleeves). Linear scan: sleeve
-/// tables are tens of rows, not millions. A desk that already has
-/// `HashMap<u128, Sleeve>` for [`MatchMode::Exact`] should keep it.
+/// Ordered table of authored chords.
+///
+/// Linear scan: policy tables are tens of rows, not millions. If you
+/// already index exact keys in a `HashMap<u128, T>`, keep that map and
+/// skip this type.
+///
+/// # Example
+///
+/// Protocol flags: bit 0 = `live`, bit 1 = `degraded`, bit 2 = `drain`.
+/// A host might fire “degraded_live” only when both live and degraded
+/// are on, even if drain is also on (longest subset), or require the
+/// exact mask (exact mode).
+///
+/// ```
+/// # #[cfg(feature = "alloc")]
+/// # {
+/// use newton_machine::prelude::*;
+///
+/// let live = Bits::bit(0);
+/// let degraded = Bits::bit(1);
+/// let drain = Bits::bit(2);
+///
+/// let mut t = ChordTable::new(); // longest subset, refuse ties
+/// t.insert(live | degraded, "degraded_live");
+///
+/// let pool = live | degraded | drain;
+/// match t.lookup(pool) {
+///     Hit::Hit { value, .. } => assert_eq!(*value, "degraded_live"),
+///     other => panic!("{other:?}"),
+/// }
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct ChordTable<T> {
     rows: Vec<Row<T>>,
@@ -83,11 +170,11 @@ pub struct ChordTable<T> {
 impl<T> ChordTable<T> {
     /// Empty table. Default: [`MatchMode::LongestSubset`] + [`Tie::Refuse`].
     ///
-    /// Refuse-on-tie is the conservative Newton default: same-length
-    /// different combinations are a specification hole, not a race the
-    /// crate should invent a winner for. Quant exact maps never hit a
-    /// tie (keys are unique). Desks that want YAML-list order pass
-    /// [`Tie::AuthorOrder`].
+    /// Refuse-on-tie is the conservative default: two same-length
+    /// chords against a fatter pool are a hole in the table, not a
+    /// winner the crate should invent. Hosts that want list order pass
+    /// [`Tie::AuthorOrder`]. Hosts that want fail-closed exact keys use
+    /// [`ChordTable::exact`].
     pub fn new() -> Self {
         Self {
             rows: Vec::new(),
@@ -96,7 +183,8 @@ impl<T> ChordTable<T> {
         }
     }
 
-    /// [`MatchMode::Exact`] + [`Tie::AuthorOrder`] (ties cannot occur).
+    /// [`MatchMode::Exact`] + [`Tie::AuthorOrder`] (ties cannot occur:
+    /// keys are unique).
     pub fn exact() -> Self {
         Self {
             rows: Vec::new(),
@@ -162,8 +250,8 @@ impl<T> ChordTable<T> {
     ///
     /// Ranking for [`MatchMode::LongestSubset`]:
     ///
-    /// 1. `row.mask ⊆ pool`
-    /// 2. greater [`Bits::count`]
+    /// 1. `row.mask ⊆ pool` ([`Bits::contains`])
+    /// 2. greater [`Bits::count`] (longer chord)
     /// 3. greater `priority`
     /// 4. earlier insert ([`Tie::AuthorOrder`]) or [`Hit::Tie`] ([`Tie::Refuse`])
     pub fn lookup(&self, pool: Bits) -> Hit<'_, T> {
@@ -286,7 +374,7 @@ mod tests {
 
     #[test]
     fn pool_abcd_acd_abd_tie() {
-        // User's full table: {A,B}, {A,C,D}, {A,B,D}. Pool {A,B,C,D}
+        // Full table: {A,B}, {A,C,D}, {A,B,D}. Pool {A,B,C,D}
         // has two length-3 subsets. Default Refuse → Tie, not a guess.
         match table().lookup(abcd()) {
             Hit::Tie { length, n } => {

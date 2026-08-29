@@ -71,7 +71,7 @@ impl<M: Machine> Runtime<M> {
 
     /// Apply `msg` only when `gate` is true (category-change / lift).
     ///
-    /// The host classifies. A 5s pulse that does not move an XOR child is
+    /// The host classifies. A tick that does not move an XOR child is
     /// not a message. If `gate` is false, `msg` is dropped and this returns
     /// `None` — prefer [`crate::host::changed`] so you only build `msg` on
     /// a real change.
@@ -109,7 +109,8 @@ impl<M: Machine> Runtime<M> {
     }
 
     /// [`Machine::project`](crate::Machine::project): compact key for a
-    /// host chord / sleeve table. Not a Harel node.
+    /// host [`ChordTable`](crate::ChordTable) (or the host’s own map).
+    /// Not a Harel node.
     #[inline]
     pub fn project(&self) -> crate::bits::Bits {
         self.machine.project()

@@ -241,11 +241,11 @@ HTML report: `target/criterion/report/index.html`.
 ## What this crate will never do
 
 - Interpret SCXML documents at runtime.
-- Open sockets, place orders, or perform I/O inside `update`.
+- Open sockets or perform I/O inside `update`.
 - Run one thread per orthogonal region.
 - Store closures in a snapshot.
 - Be a risk gateway. The machine may *request* lock via `Cmd`. Only a host firewall may *admit* a command to the world.
-- Load YAML as a chart, or treat a sleeve / superstate table as a Harel node. Truth is nested ADTs; policy is a host [`ChordTable`](https://docs.rs/newton-machine/latest/newton_machine/struct.ChordTable.html) (or the desk’s own `HashMap`).
+- Load YAML as a chart, or treat a host policy table as a Harel node. Truth is nested ADTs; policy is a host [`ChordTable`](https://docs.rs/newton-machine/latest/newton_machine/struct.ChordTable.html) (or the host’s own `HashMap`).
 
 ## Features
 
