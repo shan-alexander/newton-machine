@@ -1,8 +1,17 @@
-//! Internal follow-ups are capped. A loop is a `Storm`, not a hang.
+//! # Storm — the RTC drain cap
 //!
-//! ```text
-//! cargo run --example storm
-//! ```
+//! Run: `cargo run --example storm`
+//!
+//! **RTC** (run-to-completion): one external message is finished before the
+//! next external message starts. Harel also allows *internal* follow-ups
+//! during that step (`rtc` drains an [`Inbox`]).
+//!
+//! A transition that always queues another message (`0 → 1 → 2 → …` forever)
+//! would never return to the host. The **drain cap** (default 32, here 4)
+//! turns that into [`Storm`] instead of a wedged process.
+//!
+//! A Harel interpreter might spin on internal events until a tool-specific
+//! timeout — or never. UCA makes the bound part of the step.
 
 use newton_machine::prelude::*;
 
